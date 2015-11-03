@@ -1,0 +1,46 @@
+<idea-plugin version="2">
+  <id>com.bryansharpe.slackstorm</id>
+  <name>Slack Storm</name>
+  <version>1.0</version>
+  <vendor url="http://www.bryansharpe.com" email="bryansharpe@gmail.com">Bryan Sharpe</vendor>
+
+
+  <depends>com.intellij.modules.lang</depends>
+  <!--
+  <depends>com.jetbrains.php</depends>
+  <depends>com.intellij.modules.platform</depends>
+  -->
+
+  <description><![CDATA[
+      Allows posting a selection of text to a Slack channel
+    ]]></description>
+
+  <change-notes><![CDATA[
+    ]]>
+  </change-notes>
+
+  <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
+  <idea-version since-build="131"/>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService serviceInterface="com.bryansharpe.slackstorm.SlackStorage"
+                        serviceImplementation="com.bryansharpe.slackstorm.SlackStorage"/>
+  </extensions>
+
+  <application-components>
+  </application-components>
+
+  <project-components>
+  </project-components>
+
+  <actions>
+    <!-- Add your actions here -->
+    <action id="SlackSettings" class="com.bryansharpe.slackstorm.SlackSettings" text="Slack Settings">
+      <add-to-group group-id="ToolsMenu" anchor="first"/>
+    </action>
+    <action id="SlackPost" class="com.bryansharpe.slackstorm.SlackPost" text="Send to Slack" icon="/icons/slack.png">
+      <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+    </action>
+  </actions>
+
+</idea-plugin>
