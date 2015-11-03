@@ -1,21 +1,23 @@
 <idea-plugin version="2">
   <id>com.bryansharpe.slackstorm</id>
   <name>Slack Storm</name>
-  <version>1.0</version>
-  <vendor url="http://www.bryansharpe.com" email="bryansharpe@gmail.com">Bryan Sharpe</vendor>
+  <version>1.1</version>
+  <vendor url="http://www.bryansharpe.com">Bryan Sharpe</vendor>
 
 
   <depends>com.intellij.modules.lang</depends>
   <!--
+  Initially just for PHP Storm, leaving for reference for now
   <depends>com.jetbrains.php</depends>
   <depends>com.intellij.modules.platform</depends>
   -->
 
   <description><![CDATA[
-      Allows posting a selection of text to a Slack channel
+      Allows posting a selection of text to a Slack channel via incoming webhooks
     ]]></description>
 
   <change-notes><![CDATA[
+    1.1 - Documentation and cleanup
     ]]>
   </change-notes>
 
@@ -34,7 +36,6 @@
   </project-components>
 
   <actions>
-    <!-- Add your actions here -->
     <action id="SlackSettings" class="com.bryansharpe.slackstorm.SlackSettings" text="Slack Settings">
       <add-to-group group-id="ToolsMenu" anchor="first"/>
     </action>

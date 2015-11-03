@@ -19,7 +19,7 @@ public class SlackSettings extends AnAction {
 
         if (token != null) {
             settings.token = token;
-            Messages.showMessageDialog(project, "Reload project for changes to take effect.", "Information", Messages.getInformationIcon());
+            Messages.showMessageDialog(project, "Settings Saved.", "Information", Messages.getInformationIcon());
         }
 
     }
