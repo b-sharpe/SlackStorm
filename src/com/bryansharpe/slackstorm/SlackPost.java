@@ -28,22 +28,19 @@ public class SlackPost extends AnAction {
     private static final String UTF_8 = "UTF-8";
     private static final String SLACK_ENDPOINT = "https://hooks.slack.com/services/";
 
-    private String token;
-
-    public SlackPost() {
-        SlackStorage settings = SlackStorage.getInstance();
-        token = settings.token;
-    }
-
     @Override
     public void update(final AnActionEvent e) {
         //Get required data keys
         final Project project = e.getData(CommonDataKeys.PROJECT);
         final Editor editor = e.getData(CommonDataKeys.EDITOR);
+
+        // Get settings
+        SlackStorage slackSettings = SlackStorage.getInstance();
+
         //Set visibility only in case of existing project and editor and if some text in the editor is selected
         e.getPresentation().setVisible((project != null && editor != null
                 && editor.getSelectionModel().hasSelection()
-                && token != null));
+                && slackSettings.settings.size() > 0));
     }
 
     public void actionPerformed(AnActionEvent anActionEvent) {
@@ -68,9 +65,9 @@ public class SlackPost extends AnAction {
 
         // Reload our settings
         SlackStorage settings = SlackStorage.getInstance();
-        this.token = settings.token;
+        //this.token = settings.token;
 
-        HttpPost httppost = new HttpPost(SLACK_ENDPOINT + this.token);
+        HttpPost httppost = new HttpPost(SLACK_ENDPOINT);
 
         // Simple escape @todo: check against slack input options
         message = message.replace("\"", "\\\"");

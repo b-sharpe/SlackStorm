@@ -1,7 +1,9 @@
 package com.bryansharpe.slackstorm;
 
 import com.intellij.openapi.components.*;
-import com.intellij.util.xmlb.XmlSerializerUtil;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by bsharpe on 11/2/2015.
@@ -16,7 +18,7 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
 )
 public class SlackStorage implements PersistentStateComponent<SlackStorage> {
 
-    public String token;
+    public Map<String, String> settings = new HashMap<String, String>();
 
     @Override
     public SlackStorage getState() {
@@ -25,7 +27,7 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
 
     @Override
     public void loadState(SlackStorage slackStorage) {
-        token = slackStorage.token;
+        settings = slackStorage.settings;
     }
 
     public static SlackStorage getInstance() {
