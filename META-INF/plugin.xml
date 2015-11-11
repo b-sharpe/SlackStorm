@@ -40,9 +40,9 @@
     <group id="SlackSettings" class="com.bryansharpe.slackstorm.SlackSettings" popup="true" text="Slack Settings">
       <add-to-group group-id="ToolsMenu" anchor="first"/>
     </group>
-    <action id="SlackPost" class="com.bryansharpe.slackstorm.SlackPost" text="Send to Slack" icon="/icons/slack.png">
+    <group id="SlackPost" class="com.bryansharpe.slackstorm.SlackPost" popup="true" text="Send to Slack" icon="/icons/slack.png">
       <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-    </action>
+    </group>
   </actions>
 
 </idea-plugin>
