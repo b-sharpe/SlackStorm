@@ -41,6 +41,7 @@ public class SlackSettings extends ActionGroup {
         }
         public void actionPerformed(AnActionEvent e) {
             final Project project = e.getData(CommonDataKeys.PROJECT);
+            boolean validSetting = false;
 
             String description = Messages.showInputDialog(
                     project,
@@ -52,18 +53,35 @@ public class SlackSettings extends ActionGroup {
             // See main to-do about keys.
             if (description != null && !description.isEmpty()) {
 
-                String token = Messages.showInputDialog(
+                String userAlias = Messages.showInputDialog(
                         project,
-                        "Enter your slack webhook integration path (i.e. <xxx>/<yyy>/<zzz>.", "Slack Settings",
-                        IconLoader.getIcon("/icons/slack.png")
+                        "Username to post as:", "Slack Settings",
+                        IconLoader.getIcon("/icons/slack.png"),
+                        "SlackStorm",
+                        null
                 );
 
-                // All good
-                if (token != null && !token.isEmpty()) {
-                    SlackStorage slackStorage = SlackStorage.getInstance();
-                    slackStorage.settings.put(description, token);
-                    Messages.showMessageDialog(project, "Settings Saved.", "Information", Messages.getInformationIcon());
+                if (userAlias != null && !userAlias.isEmpty()) {
+
+                    String token = Messages.showInputDialog(
+                            project,
+                            "Enter your slack webhook integration path (i.e. <xxx>/<yyy>/<zzz>.", "Slack Settings",
+                            IconLoader.getIcon("/icons/slack.png")
+                    );
+
+                    // All good
+                    if (token != null && !token.isEmpty()) {
+                        validSetting = true;
+                        SlackStorage slackStorage = SlackStorage.getInstance();
+                        slackStorage.settings.put(description, token);
+                        slackStorage.aliases.put(description, userAlias);
+                        Messages.showMessageDialog(project, "Settings Saved.", "Information", Messages.getInformationIcon());
+                    }
                 }
+            }
+
+            if (!validSetting) {
+                Messages.showMessageDialog(project, "Field required.", "Error", Messages.getErrorIcon());
             }
         }
     }
@@ -83,6 +101,7 @@ public class SlackSettings extends ActionGroup {
             if (confirm == 0) {
                 SlackStorage slackStorage = SlackStorage.getInstance();
                 slackStorage.settings.clear();
+                slackStorage.aliases.clear();
                 Messages.showMessageDialog(project, "Settings Cleared.", "Information", Messages.getInformationIcon());
             }
         }

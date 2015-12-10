@@ -19,6 +19,7 @@ import java.util.Map;
 public class SlackStorage implements PersistentStateComponent<SlackStorage> {
 
     public Map<String, String> settings = new HashMap<String, String>();
+    public Map<String, String> aliases = new HashMap<String, String>();
 
     @Override
     public SlackStorage getState() {
@@ -28,6 +29,7 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
     @Override
     public void loadState(SlackStorage slackStorage) {
         settings = slackStorage.settings;
+        aliases = slackStorage.aliases;
     }
 
     public static SlackStorage getInstance() {

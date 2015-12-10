@@ -4,12 +4,16 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.editor.CaretState;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.xml.XmlCoreEnvironment;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -20,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,6 +85,7 @@ public class SlackPost extends ActionGroup {
             final Editor editor = anActionEvent.getRequiredData(CommonDataKeys.EDITOR);
             final Project project = anActionEvent.getRequiredData(CommonDataKeys.PROJECT);
             final Document document = editor.getDocument();
+            final VirtualFile currentFile = FileDocumentManager.getInstance().getFile(document);
             final SelectionModel selectionModel = editor.getSelectionModel();
 
             String selectedText = selectionModel.getSelectedText();
@@ -87,17 +93,30 @@ public class SlackPost extends ActionGroup {
                 return;
             }
 
-            this.pushMessage(selectedText, anActionEvent);
+            // Get details
+            String fileName = currentFile.getName();
+            CaretState selectionInfo = editor.getCaretModel().getCaretsAndSelections().get(0);
+            int selectionStart = selectionInfo.getSelectionStart().line + 1;
+            int selectionEnd = selectionInfo.getSelectionEnd().line + 1;
+            String fileDetails = "_File: " + fileName + ", Line(s): " + selectionStart + "-" + selectionEnd + "_";
+
+            this.pushMessage(selectedText, fileDetails, anActionEvent);
             selectionModel.removeSelection();
         }
 
-        private void pushMessage(String message, final AnActionEvent actionEvent) {
+        private void pushMessage(String message, String details, final AnActionEvent actionEvent) {
             final Project project = actionEvent.getRequiredData(CommonDataKeys.PROJECT);
             CloseableHttpClient httpclient = HttpClients.createDefault();
 
             // Reload our settings
             SlackStorage slackSettings = SlackStorage.getInstance();
             this.token = slackSettings.settings.get(this.channelKey);
+            String alias = slackSettings.aliases.get(this.channelKey);
+
+            // Fallback from previous versions
+            if (alias == null || alias.isEmpty()) {
+                alias = "SlackStorm";
+            }
 
             HttpPost httppost = new HttpPost(SLACK_ENDPOINT + this.token);
 
@@ -106,9 +125,9 @@ public class SlackPost extends ActionGroup {
 
             List<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>(1);
             params.add(new BasicNameValuePair("payload", "{" +
-                    "\"text\" : \"```" + message + "```\"," +
-                    "\"username\" : \"SlackStorm\"," +
-                    "\"icon_emoji\" : \":scream_cat:\"" +
+                    "\"text\" : \"" + details + " ```" + message + "```\"," +
+                    "\"username\" : \"" + alias + "\"," +
+                    "\"icon_emoji\" : \":thunder_cloud_and_rain:\"" +
                     "}"));
             try {
                 httppost.setEntity(new UrlEncodedFormEntity(params, UTF_8));
