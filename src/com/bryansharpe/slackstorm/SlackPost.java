@@ -13,20 +13,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.xml.XmlCoreEnvironment;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Created by bsharpe on 11/2/2015.
@@ -100,13 +93,16 @@ public class SlackPost extends ActionGroup {
             int selectionEnd = selectionInfo.getSelectionEnd().line + 1;
             String fileDetails = "_File: " + fileName + ", Line(s): " + selectionStart + "-" + selectionEnd + "_";
 
-            this.pushMessage(selectedText, fileDetails, anActionEvent);
+            try {
+                this.pushMessage(selectedText, fileDetails, anActionEvent);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             selectionModel.removeSelection();
         }
 
-        private void pushMessage(String message, String details, final AnActionEvent actionEvent) {
+        private void pushMessage(String message, String details, final AnActionEvent actionEvent) throws IOException {
             final Project project = actionEvent.getRequiredData(CommonDataKeys.PROJECT);
-            CloseableHttpClient httpclient = HttpClients.createDefault();
 
             // Reload our settings
             SlackStorage slackSettings = SlackStorage.getInstance();
@@ -118,37 +114,39 @@ public class SlackPost extends ActionGroup {
                 alias = "SlackStorm";
             }
 
-            HttpPost httppost = new HttpPost(SLACK_ENDPOINT + this.token);
-
             // Simple escape @todo: check against slack input options
             message = message.replace("\"", "\\\"");
 
-            List<BasicNameValuePair> params = new ArrayList<BasicNameValuePair>(1);
-            params.add(new BasicNameValuePair("payload", "{" +
+            String payload =
+                "{" +
                     "\"text\" : \"" + details + " ```" + message + "```\"," +
                     "\"username\" : \"" + alias + "\"," +
                     "\"icon_emoji\" : \":thunder_cloud_and_rain:\"" +
-                    "}"));
-            try {
-                httppost.setEntity(new UrlEncodedFormEntity(params, UTF_8));
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
+                "}";
+            String input = "payload=" + payload;
 
-            //Execute and get the response.
-            HttpResponse response = null;
             try {
-                response = httpclient.execute(httppost);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                URL url = new URL(SLACK_ENDPOINT + this.token);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
 
-            int code = response.getStatusLine().getStatusCode();
-            if (code == 200) {
-                Messages.showMessageDialog(project, "Message Sent.", "Information", IconLoader.getIcon("/icons/slack.png"));
-            }
-            else {
-                Messages.showMessageDialog(project, "Error Occurred.", "Error", Messages.getErrorIcon());
+                DataOutputStream wr = new DataOutputStream (conn.getOutputStream ());
+                wr.writeBytes (input);
+                wr.flush ();
+                wr.close ();
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode == 200) {
+                    Messages.showMessageDialog(project, "Message Sent.", "Information", IconLoader.getIcon("/icons/slack.png"));
+                }
+                else {
+                    Messages.showMessageDialog(project, "Error Occurred.", "Error", Messages.getErrorIcon());
+                }
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
             }
         }
 
