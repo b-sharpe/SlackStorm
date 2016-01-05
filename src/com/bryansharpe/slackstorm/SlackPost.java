@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 
 /**
  * Created by bsharpe on 11/2/2015.
@@ -91,7 +92,7 @@ public class SlackPost extends ActionGroup {
             CaretState selectionInfo = editor.getCaretModel().getCaretsAndSelections().get(0);
             int selectionStart = selectionInfo.getSelectionStart().line + 1;
             int selectionEnd = selectionInfo.getSelectionEnd().line + 1;
-            String fileDetails = "_File: " + fileName + ", Line(s): " + selectionStart + "-" + selectionEnd + "_";
+            String fileDetails = "File: " + fileName + ", Line(s): " + selectionStart + "-" + selectionEnd;
 
             try {
                 this.pushMessage(selectedText, fileDetails, anActionEvent);
@@ -118,12 +119,16 @@ public class SlackPost extends ActionGroup {
             message = message.replace("\"", "\\\"");
 
             String payload =
-                "{" +
-                    "\"text\" : \"" + details + " ```" + message + "```\"," +
-                    "\"username\" : \"" + alias + "\"," +
-                    "\"icon_emoji\" : \":thunder_cloud_and_rain:\"" +
-                "}";
-            String input = "payload=" + payload;
+                    "{" +
+                        "\"attachments\" : [{" +
+                        "\"title\" : \"" + details + "\"," +
+                        "\"text\" : \"```" + message + "```\"," +
+                        "\"mrkdwn_in\" : [\"title\", \"text\"]" +
+                        "}]," +
+                        "\"username\" : \"" + alias + "\"," +
+                        "\"icon_emoji\" : \":thunder_cloud_and_rain:\"" +
+                    "}";
+            String input = "payload=" + URLEncoder.encode(payload, "UTF-8");
 
             try {
                 URL url = new URL(SLACK_ENDPOINT + this.token);
