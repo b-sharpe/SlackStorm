@@ -7,10 +7,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.IconLoader;
-import org.jdesktop.swingx.action.ActionManager;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.HashSet;
 
 /**
  * Created by bsharpe on 11/2/2015.
