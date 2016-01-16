@@ -58,6 +58,8 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
     public void clearAll()
     {
         this.settings.clear();
+        this.aliases.clear();
+        this.icons.clear();
         this.channelsRegistry.clear();
     }
 
