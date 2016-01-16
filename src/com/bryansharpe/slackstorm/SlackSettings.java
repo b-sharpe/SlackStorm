@@ -25,7 +25,7 @@ public class SlackSettings extends ActionGroup {
         final AnAction[] children = new AnAction[3];
 
         children[0] = new addChannel();
-        if (SlackStorage.getInstance().settings.size() > 0) {
+        if (SlackStorage.getInstance().getChannelsId().size() > 0) {
             children[1] = new removeChannel();
             children[2] = new removeChannels();
         }
