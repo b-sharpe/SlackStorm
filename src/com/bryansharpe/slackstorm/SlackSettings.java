@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.IconLoader;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -25,10 +24,8 @@ public class SlackSettings extends ActionGroup {
         final AnAction[] children = new AnAction[3];
 
         children[0] = new addChannel();
-        if (SlackStorage.getInstance().getChannelsId().size() > 0) {
-            children[1] = new removeChannel();
-            children[2] = new removeChannels();
-        }
+        children[1] = new removeChannel();
+        children[2] = new removeChannels();
 
         return children;
     }
@@ -104,9 +101,16 @@ public class SlackSettings extends ActionGroup {
      * Remove a channel from settings
      */
     public class removeChannel extends AnAction {
+
         public removeChannel() {
             super("Remove Slack Channel");
         }
+
+        @Override
+        public void update(final AnActionEvent e) {
+            e.getPresentation().setEnabled(SlackStorage.getInstance().getChannelsId().size() > 0);
+        }
+
         @Override
         public void actionPerformed(AnActionEvent e) {
             final Project project = e.getData(CommonDataKeys.PROJECT);
@@ -140,12 +144,17 @@ public class SlackSettings extends ActionGroup {
             super("Reset Slack Channels");
         }
 
+        @Override
+        public void update(final AnActionEvent e) {
+            e.getPresentation().setEnabled(SlackStorage.getInstance().getChannelsId().size() > 0);
+        }
+
         public void actionPerformed(AnActionEvent e) {
             final Project project = e.getData(CommonDataKeys.PROJECT);
             // Prompt since we are killing ALL
             if (Messages.showYesNoDialog(project, "This will clear all of your channels settings", "Slack Settings", SlackStorage.getSlackIcon()) == 0) {
                 SlackStorage.getInstance().clearAll();
-                Messages.showMessageDialog(project, "Settings Cleared.", "Information", Messages.getInformationIcon());
+                Messages.showMessageDialog(project, "Settings cleared.", "Information", Messages.getInformationIcon());
             }
         }
     }
