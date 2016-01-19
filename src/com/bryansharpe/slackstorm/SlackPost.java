@@ -18,7 +18,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.stream.Collectors;
 
 /**
  * Created by bsharpe on 11/2/2015.
@@ -34,7 +33,13 @@ public class SlackPost extends ActionGroup {
         SlackStorage slackStorage = SlackStorage.getInstance();
         AnAction[] children = new AnAction[slackStorage.channelsRegistry.size()];
 
-        return slackStorage.channelsRegistry.stream().map(SlackMessage::new).collect(Collectors.toList()).toArray(children);
+        int count = 0;
+        for (SlackChannel slackChannel: slackStorage.channelsRegistry) {
+            children[count] = new SlackMessage(slackChannel);
+            count++;
+        }
+
+        return children;
     }
 
     /**

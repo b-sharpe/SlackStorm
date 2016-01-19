@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Created by bsharpe on 11/2/2015.
@@ -25,11 +24,11 @@ import java.util.stream.Collectors;
 )
 public class SlackStorage implements PersistentStateComponent<SlackStorage> {
 
-    public Map<String, String> settings = new HashMap<>();
-    public Map<String, String> aliases  = new HashMap<>();
-    public Map<String, String> icons  = new HashMap<>();
+    public Map<String, String> settings = new HashMap<String, String>();
+    public Map<String, String> aliases  = new HashMap<String, String>();
+    public Map<String, String> icons  = new HashMap<String, String>();
 
-    protected List<SlackChannel> channelsRegistry = new ArrayList<>();
+    protected List<SlackChannel> channelsRegistry = new ArrayList<SlackChannel>();
 
     @Override
     public SlackStorage getState() {
@@ -42,9 +41,9 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
         aliases = slackStorage.aliases;
         icons = slackStorage.icons;
 
-        settings.keySet()
-                .stream()
-                .forEach(key -> channelsRegistry.add(new SlackChannel(settings.get(key), key, aliases.get(key), icons.get(key))));
+        for (String key: settings.keySet()) {
+            channelsRegistry.add(new SlackChannel(settings.get(key), key, aliases.get(key), icons.get(key)));
+        }
     }
 
     public void registerChannel(SlackChannel channel) {
@@ -69,11 +68,23 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
     }
 
     public SlackChannel getSlackChannelByDescription(String description) {
-        return channelsRegistry.stream().filter(x -> x.id.equals(description)).findFirst().get();
+        for (SlackChannel slackChannel : channelsRegistry) {
+            if (slackChannel.id.equals(description)) {
+                return slackChannel;
+            }
+        }
+
+        return null;
     }
 
     public List<String> getChannelsId() {
-        return channelsRegistry.stream().map(SlackChannel::getId).collect(Collectors.toList());
+        List<String> channelsId = new ArrayList<String>();
+
+        for (SlackChannel slackChannel : channelsRegistry) {
+            channelsId.add(slackChannel.id);
+        }
+
+        return channelsId;
     }
 
     public static Icon getSlackIcon() {
