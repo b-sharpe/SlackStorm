@@ -15,8 +15,7 @@ import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -137,6 +136,8 @@ public class SlackPost extends ActionGroup {
                 conn.setDoInput(true);
                 conn.setDoOutput(true);
 
+
+
                 DataOutputStream wr = new DataOutputStream (conn.getOutputStream ());
                 wr.writeBytes (input);
                 wr.flush ();
@@ -144,17 +145,49 @@ public class SlackPost extends ActionGroup {
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode == 200) {
-                    Messages.showMessageDialog(project, "Message Sent.", "Information", IconLoader.getIcon("/icons/slack.png"));
+                    String responseMessage = readInputStreamToString(conn);
+                    if (responseMessage.equals("ok")) {
+                        Messages.showMessageDialog(project, "Message Sent.", "Information", IconLoader.getIcon("/icons/slack.png"));
+                    }
+                    else {
+                        Messages.showMessageDialog(project, "An Error Occurred. Message not sent.", "Error", Messages.getErrorIcon());
+                    }
                 }
                 else {
-                    Messages.showMessageDialog(project, "Error Occurred.", "Error", Messages.getErrorIcon());
+                    Messages.showMessageDialog(project, "Bad request to Slack.", "Error", Messages.getErrorIcon());
                 }
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
         }
+        /**
+         * @param connection object; note: before calling this function,
+         *   ensure that the connection is already be open, and any writes to
+         *   the connection's output stream should have already been completed.
+         * @return String containing the body of the connection response or
+         *   null if the input stream could not be read correctly
+         */
+        private String readInputStreamToString(HttpURLConnection connection) {
+            String result = null;
+            StringBuffer sb = new StringBuffer();
+            InputStream is = null;
 
+            try {
+                is = new BufferedInputStream(connection.getInputStream());
+                BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                String inputLine = "";
+                while ((inputLine = br.readLine()) != null) {
+                    sb.append(inputLine);
+                }
+                result = sb.toString();
+            }
+            catch (Exception e) {
+                result = null;
+            }
+
+            return result;
+        }
     }
 
 }
