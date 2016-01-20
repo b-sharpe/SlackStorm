@@ -21,6 +21,7 @@ import java.net.URLEncoder;
 /**
  * Created by bsharpe on 11/2/2015.
  * Updated by Anael CHARDAN "anael.chardan@gmail.com" on 01/16/2016
+ * Updated by bsharpe on 01/20/2016.
  */
 public class SlackPost extends ActionGroup {
 
@@ -131,22 +132,18 @@ public class SlackPost extends ActionGroup {
                 wr.close ();
 
 
-                if (conn.getResponseCode() == 200) {
-                    String responseMessage = readInputStreamToString(conn);
-                    if (responseMessage.equals("ok")) {
-                        Messages.showMessageDialog(project, "Message Sent.", "Information", IconLoader.getIcon("/icons/slack.png"));
-                    }
-
-                        Messages.showMessageDialog(project, "An Error Occurred. Message not sent.", "Error", Messages.getErrorIcon());
+                if (conn.getResponseCode() == 200 && readInputStreamToString(conn).equals("ok")) {
+                    Messages.showMessageDialog(project, "Message Sent.", "Information", SlackStorage.getSlackIcon());
                 }
                 else {
-                    Messages.showMessageDialog(project, "Bad request to Slack.", "Error", Messages.getErrorIcon());
+                    Messages.showMessageDialog(project, "Message not sent, check your configuration.", "Error", Messages.getErrorIcon());
                 }
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
         }
+
         /**
          * @param connection object; note: before calling this function,
          *   ensure that the connection is already be open, and any writes to
@@ -169,7 +166,7 @@ public class SlackPost extends ActionGroup {
                 result = sb.toString();
             }
             catch (Exception e) {
-                result = null;
+                result = "";
             }
 
             return result;
