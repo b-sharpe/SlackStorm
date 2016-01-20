@@ -6,82 +6,131 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.IconLoader;
-import org.jdesktop.swingx.action.ActionManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
+import java.util.List;
 
 /**
  * Created by bsharpe on 11/2/2015.
+ * Updated by Anael Chardan "anael.chardan@gmail.com"
+ * Updated by Clément GARBAY "clementgarbay@gmail.com" on 01/16/2016
  *
  * Create the main toolbar group with add/clear
- *
- * @TODO: allow removing of individual channels
  */
 public class SlackSettings extends ActionGroup {
     @NotNull
     @Override
     public AnAction[] getChildren(AnActionEvent anActionEvent) {
-        final AnAction[] children = new AnAction[2];
+        final AnAction[] children = new AnAction[3];
 
         children[0] = new addChannel();
-        children[1] = new removeChannels();
+        children[1] = new removeChannel();
+        children[2] = new removeChannels();
 
         return children;
     }
 
     /**
-     * Add a new channel.
-     * @todo: should have a better key system rather than a full text string
+     * Add a new channel
      */
     public class addChannel extends AnAction {
+
+        private Project project;
+
         public addChannel() {
             super("Add Slack Channel");
         }
+
         public void actionPerformed(AnActionEvent e) {
-            final Project project = e.getData(CommonDataKeys.PROJECT);
-            boolean validSetting = false;
+            this.project = e.getData(CommonDataKeys.PROJECT);
 
-            String description = Messages.showInputDialog(
-                    project,
-                    "Enter a Description", "Slack Settings",
-                    IconLoader.getIcon("/icons/slack.png")
-            );
+            String description = this.showInputDialog(SlackChannel.getIdDescription(), null);
 
-            // Don't bother if description wasn't entered since we need a good key for display.
-            // See main to-do about keys.
-            if (description != null && !description.isEmpty()) {
-
-                String userAlias = Messages.showInputDialog(
-                        project,
-                        "Username to post as:", "Slack Settings",
-                        IconLoader.getIcon("/icons/slack.png"),
-                        "SlackStorm",
-                        null
-                );
-
-                if (userAlias != null && !userAlias.isEmpty()) {
-
-                    String token = Messages.showInputDialog(
-                            project,
-                            "Enter your slack webhook integration path (i.e. <xxx>/<yyy>/<zzz>.", "Slack Settings",
-                            IconLoader.getIcon("/icons/slack.png")
-                    );
-
-                    // All good
-                    if (token != null && !token.isEmpty()) {
-                        validSetting = true;
-                        SlackStorage slackStorage = SlackStorage.getInstance();
-                        slackStorage.settings.put(description, token);
-                        slackStorage.aliases.put(description, userAlias);
-                        Messages.showMessageDialog(project, "Settings Saved.", "Information", Messages.getInformationIcon());
-                    }
-                }
+            if (!isValidField(description)) {
+                errorMessage();
+                return;
             }
 
-            if (!validSetting) {
-                Messages.showMessageDialog(project, "Field required.", "Error", Messages.getErrorIcon());
+            String userAlias = this.showInputDialog(SlackChannel.getSenderNameDescription(), SlackChannel.getSenderNameDefaultValue());
+
+            if (!isValidField(userAlias)) {
+                errorMessage();
+                return;
+            }
+
+            String icon = this.showInputDialog(SlackChannel.getSenderIconDescription(), SlackChannel.getDefaultSenderIcon());
+
+            if (!isValidField(icon)) {
+                errorMessage();
+                return;
+            }
+
+            String token = this.showInputDialog(SlackChannel.getTokenDescription(), null);
+
+            if (!isValidField(token)) {
+                errorMessage();
+                return;
+            }
+
+            // Here all is good, we can create the channel
+            SlackStorage.getInstance().registerChannel(new SlackChannel(token, description, userAlias, icon));
+            Messages.showMessageDialog(this.project, "Settings Saved.", "Information", Messages.getInformationIcon());
+        }
+
+        protected String showInputDialog(String keyDescription, String keyDefaultValue) {
+            return Messages.showInputDialog(
+                    this.project,
+                    keyDescription,
+                    SlackChannel.getSettingsDescription(),
+                    SlackStorage.getSlackIcon(),
+                    keyDefaultValue,
+                    null
+            );
+        }
+
+        protected void errorMessage() {
+            Messages.showMessageDialog(this.project, "Field required.", "Error", Messages.getErrorIcon());
+        }
+
+        protected boolean isValidField(String field) {
+            return field != null && !field.isEmpty();
+        }
+    }
+
+    /**
+     * Remove a channel from settings
+     */
+    public class removeChannel extends AnAction {
+
+        public removeChannel() {
+            super("Remove Slack Channel");
+        }
+
+        @Override
+        public void update(final AnActionEvent e) {
+            e.getPresentation().setEnabled(SlackStorage.getInstance().getChannelsId().size() > 0);
+        }
+
+        @Override
+        public void actionPerformed(AnActionEvent e) {
+            final Project project = e.getData(CommonDataKeys.PROJECT);
+
+            List<String> channelsId = SlackStorage.getInstance().getChannelsId();
+
+            if (channelsId.size() > 0) {
+                String channelToRemove = Messages.showEditableChooseDialog(
+                    "Select the channel to remove",
+                    SlackChannel.getSettingsDescription(),
+                    SlackStorage.getSlackIcon(),
+                    channelsId.toArray(new String[channelsId.size()]),
+                    channelsId.get(0),
+                    null
+                );
+
+                if (channelsId.contains(channelToRemove)) {
+                    SlackStorage.getInstance().removeChannelByDescription(channelToRemove);
+                    Messages.showMessageDialog(project, "Channel \"" + channelToRemove + "\" removed.", "Information", Messages.getInformationIcon());
+                }
             }
         }
     }
@@ -90,19 +139,22 @@ public class SlackSettings extends ActionGroup {
      * Clear all channels from settings
      */
     public class removeChannels extends AnAction {
+
         public removeChannels() {
             super("Reset Slack Channels");
         }
+
+        @Override
+        public void update(final AnActionEvent e) {
+            e.getPresentation().setEnabled(SlackStorage.getInstance().getChannelsId().size() > 0);
+        }
+
         public void actionPerformed(AnActionEvent e) {
             final Project project = e.getData(CommonDataKeys.PROJECT);
-
             // Prompt since we are killing ALL
-            int confirm = Messages.showYesNoDialog(project, "This will clear all of your channel settings", "Slack Settings", IconLoader.getIcon("/icons/slack.png"));
-            if (confirm == 0) {
-                SlackStorage slackStorage = SlackStorage.getInstance();
-                slackStorage.settings.clear();
-                slackStorage.aliases.clear();
-                Messages.showMessageDialog(project, "Settings Cleared.", "Information", Messages.getInformationIcon());
+            if (Messages.showYesNoDialog(project, "This will clear all of your channels settings", "Slack Settings", SlackStorage.getSlackIcon()) == 0) {
+                SlackStorage.getInstance().clearAll();
+                Messages.showMessageDialog(project, "Settings cleared.", "Information", Messages.getInformationIcon());
             }
         }
     }

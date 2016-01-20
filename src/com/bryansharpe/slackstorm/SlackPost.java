@@ -5,13 +5,10 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.CaretState;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,20 +20,22 @@ import java.net.URLEncoder;
 
 /**
  * Created by bsharpe on 11/2/2015.
+ * Updated by Anael CHARDAN "anael.chardan@gmail.com" on 01/16/2016
+ * Updated by bsharpe on 01/20/2016.
  */
 public class SlackPost extends ActionGroup {
+
     @NotNull
     @Override
     public AnAction[] getChildren(AnActionEvent anActionEvent) {
 
         // Get settings
         SlackStorage slackStorage = SlackStorage.getInstance();
-        final AnAction[] children = new AnAction[slackStorage.settings.size()];
+        AnAction[] children = new AnAction[slackStorage.channelsRegistry.size()];
 
-        // Create a new action for each Channel config
         int count = 0;
-        for (String key : slackStorage.settings.keySet()) {
-            children[count] = new SlackMessage(key);
+        for (SlackChannel slackChannel: slackStorage.channelsRegistry) {
+            children[count] = new SlackMessage(slackChannel);
             count++;
         }
 
@@ -48,89 +47,78 @@ public class SlackPost extends ActionGroup {
      * settings.
      */
     public class SlackMessage extends AnAction {
-        private static final String UTF_8 = "UTF-8";
-        private static final String SLACK_ENDPOINT = "https://hooks.slack.com/services/";
-        private String token;
-        private String channelKey;
+        private SlackStorage storage = SlackStorage.getInstance();
 
-        public SlackMessage(String channelKey) {
-            super(channelKey);
-            this.channelKey = channelKey;
+        private Project project;
+        private Editor editor;
+        private String currentFileName;
+
+        private String selectedText;
+
+        private SlackChannel channel;
+
+        public SlackMessage(SlackChannel channel) {
+            super(channel.getId());
+            this.channel = channel;
         }
 
         @Override
         public void update(final AnActionEvent e) {
-            //Get required data keys
-            final Project project = e.getData(CommonDataKeys.PROJECT);
-            final Editor editor = e.getData(CommonDataKeys.EDITOR);
-
-            // Get settings
-            SlackStorage slackSettings = SlackStorage.getInstance();
+            actionEventObserved(e);
 
             //Set visibility only in case of existing project and editor and if some text in the editor is selected
-            e.getPresentation().setVisible((project != null && editor != null
-                    && editor.getSelectionModel().hasSelection()
-                    && slackSettings.settings.size() > 0));
+            e.getPresentation().setVisible((project != null && editor != null && selectedText != null && storage.settings.size() > 0));
         }
 
         public void actionPerformed(AnActionEvent anActionEvent) {
-            //Get all the required data from data keys
-            final Editor editor = anActionEvent.getRequiredData(CommonDataKeys.EDITOR);
-            final Project project = anActionEvent.getRequiredData(CommonDataKeys.PROJECT);
-            final Document document = editor.getDocument();
-            final VirtualFile currentFile = FileDocumentManager.getInstance().getFile(document);
-            final SelectionModel selectionModel = editor.getSelectionModel();
+            actionEventObserved(anActionEvent);
 
-            String selectedText = selectionModel.getSelectedText();
-            if (selectedText == null) {
+            if (this.selectedText == null) {
                 return;
             }
 
-            // Get details
-            String fileName = currentFile.getName();
-            CaretState selectionInfo = editor.getCaretModel().getCaretsAndSelections().get(0);
-            int selectionStart = selectionInfo.getSelectionStart().line + 1;
-            int selectionEnd = selectionInfo.getSelectionEnd().line + 1;
-            String fileDetails = "File: " + fileName + ", Line(s): " + selectionStart + "-" + selectionEnd;
-
             try {
-                this.pushMessage(selectedText, fileDetails, anActionEvent);
+                this.pushMessage(selectedText, this.buildFileDetails());
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            selectionModel.removeSelection();
+            editor.getSelectionModel().removeSelection();
         }
 
-        private void pushMessage(String message, String details, final AnActionEvent actionEvent) throws IOException {
-            final Project project = actionEvent.getRequiredData(CommonDataKeys.PROJECT);
 
-            // Reload our settings
-            SlackStorage slackSettings = SlackStorage.getInstance();
-            this.token = slackSettings.settings.get(this.channelKey);
-            String alias = slackSettings.aliases.get(this.channelKey);
+        protected void actionEventObserved(AnActionEvent event) {
+            this.project = event.getData(CommonDataKeys.PROJECT);
+            this.editor = event.getData(CommonDataKeys.EDITOR);
 
-            // Fallback from previous versions
-            if (alias == null || alias.isEmpty()) {
-                alias = "SlackStorm";
+            if (editor == null) {
+                currentFileName = null;
+                selectedText = null;
+                return;
             }
 
-            // Simple escape @todo: check against slack input options
-            message = message.replace("\"", "\\\"");
+            final VirtualFile currentFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
 
-            String payload =
-                    "{" +
-                        "\"attachments\" : [{" +
-                        "\"title\" : \"" + details + "\"," +
-                        "\"text\" : \"```" + message + "```\"," +
-                        "\"mrkdwn_in\" : [\"title\", \"text\"]" +
-                        "}]," +
-                        "\"username\" : \"" + alias + "\"," +
-                        "\"icon_emoji\" : \":thunder_cloud_and_rain:\"" +
-                    "}";
-            String input = "payload=" + URLEncoder.encode(payload, "UTF-8");
+            if (currentFile != null) {
+                this.currentFileName = currentFile.getName();
+                this.selectedText = editor.getSelectionModel().hasSelection() ? editor.getSelectionModel().getSelectedText() : null;
+                return;
+            }
+
+            this.selectedText = null;
+        }
+
+        protected String buildFileDetails() {
+            CaretState selectionInfo = editor.getCaretModel().getCaretsAndSelections().get(0);
+            int selectionStart = selectionInfo.getSelectionStart().line + 1;
+            int selectionEnd = selectionInfo.getSelectionEnd().line + 1;
+            return "File: " + currentFileName + ", Line(s): " + selectionStart + "-" + selectionEnd;
+        }
+
+        private void pushMessage(String message, String details) throws IOException {
+            String input = "payload=" + URLEncoder.encode(channel.getPayloadMessage(details, message), "UTF-8");
 
             try {
-                URL url = new URL(SLACK_ENDPOINT + this.token);
+                URL url = new URL(channel.getUrl());
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setDoInput(true);
@@ -143,24 +131,19 @@ public class SlackPost extends ActionGroup {
                 wr.flush ();
                 wr.close ();
 
-                int responseCode = conn.getResponseCode();
-                if (responseCode == 200) {
-                    String responseMessage = readInputStreamToString(conn);
-                    if (responseMessage.equals("ok")) {
-                        Messages.showMessageDialog(project, "Message Sent.", "Information", IconLoader.getIcon("/icons/slack.png"));
-                    }
-                    else {
-                        Messages.showMessageDialog(project, "An Error Occurred. Message not sent.", "Error", Messages.getErrorIcon());
-                    }
+
+                if (conn.getResponseCode() == 200 && readInputStreamToString(conn).equals("ok")) {
+                    Messages.showMessageDialog(project, "Message Sent.", "Information", SlackStorage.getSlackIcon());
                 }
                 else {
-                    Messages.showMessageDialog(project, "Bad request to Slack.", "Error", Messages.getErrorIcon());
+                    Messages.showMessageDialog(project, "Message not sent, check your configuration.", "Error", Messages.getErrorIcon());
                 }
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
         }
+
         /**
          * @param connection object; note: before calling this function,
          *   ensure that the connection is already be open, and any writes to
@@ -183,7 +166,7 @@ public class SlackPost extends ActionGroup {
                 result = sb.toString();
             }
             catch (Exception e) {
-                result = null;
+                result = "";
             }
 
             return result;

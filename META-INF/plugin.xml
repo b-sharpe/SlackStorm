@@ -1,7 +1,7 @@
 <idea-plugin version="2">
   <id>com.bryansharpe.slackstorm</id>
   <name>Slack Storm</name>
-  <version>1.5</version>
+  <version>1.6</version>
   <vendor url="http://www.bryansharpe.com">Bryan Sharpe</vendor>
 
 
@@ -23,6 +23,9 @@
     1.4 - Update to urlConnection to support newer IntelliJ products<br />
     1.5 - Fix critical bug<br />
         - Change to attachment format<br />
+    1.6 - Ability to remove one specific channel<br />
+        - Choice on icon sender<br />
+        - Better response checking<br />
     ]]>
   </change-notes>
 
