@@ -124,13 +124,10 @@ public class SlackPost extends ActionGroup {
                 conn.setDoInput(true);
                 conn.setDoOutput(true);
 
-
-
                 DataOutputStream wr = new DataOutputStream (conn.getOutputStream ());
                 wr.writeBytes (input);
                 wr.flush ();
                 wr.close ();
-
 
                 if (conn.getResponseCode() == 200 && readInputStreamToString(conn).equals("ok")) {
                     Messages.showMessageDialog(project, "Message Sent.", "Information", SlackStorage.getSlackIcon());

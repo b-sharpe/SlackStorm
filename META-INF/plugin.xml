@@ -1,7 +1,7 @@
 <idea-plugin version="2">
   <id>com.bryansharpe.slackstorm</id>
   <name>Slack Storm</name>
-  <version>1.6</version>
+  <version>1.7</version>
   <vendor url="http://www.bryansharpe.com">Bryan Sharpe</vendor>
 
 
@@ -26,6 +26,9 @@
     1.6 - Ability to remove one specific channel<br />
         - Choice on icon sender<br />
         - Better response checking<br />
+    1.7 - Ability to edit a channel<br />
+        - Better Escaping<br />
+        <br />
     ]]>
   </change-notes>
 
