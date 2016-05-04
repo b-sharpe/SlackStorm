@@ -17,7 +17,7 @@ public class SlackChannel {
     }
 
     public String getPayloadMessage(String title, String message) {
-        message = message.replace("\"", "\\\"").replace("\\", "\\\\");
+        message = message.replace("\\", "\\\\").replace("\"", "\\\"");
 
         return "{" +
                     "\"attachments\" : [{" +
