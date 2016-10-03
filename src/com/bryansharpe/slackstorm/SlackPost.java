@@ -97,9 +97,11 @@ public class SlackPost extends ActionGroup {
             }
 
             final VirtualFile currentFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
+            final String projectBase = project.getBasePath();
 
             if (currentFile != null) {
-                this.currentFileName = currentFile.getName();
+                String fullPath = currentFile.toString();
+                this.currentFileName = projectBase == null ? fullPath : fullPath.replace("file://" + projectBase, "");
                 this.selectedText = editor.getSelectionModel().hasSelection() ? editor.getSelectionModel().getSelectedText() : null;
                 return;
             }

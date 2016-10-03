@@ -8,26 +8,36 @@ public class SlackChannel {
     protected String token;
     protected String senderName = "SlackStorm";
     protected String senderIcon = ":thunder_cloud_and_rain:";
+    protected String channelName = "";
 
-    public SlackChannel(String token, String id, String senderName, String senderIcon) {
+    public SlackChannel(String token, String id, String senderName, String senderIcon, String channelName) {
         this.token = token;
         this.id = id;
         this.senderName = senderName;
         this.senderIcon = senderIcon;
+        this.channelName = channelName;
     }
 
     public String getPayloadMessage(String title, String message) {
+
         message = message.replace("\\", "\\\\").replace("\"", "\\\"");
 
-        return "{" +
+
+        String payload = "{" +
                     "\"attachments\" : [{" +
                         "\"title\" : \"" + title + "\"," +
                         "\"text\" : \"```" + message + "```\"," +
                         "\"mrkdwn_in\" : [\"title\", \"text\"]" +
                     "}]," +
                     "\"username\" : \"" + this.getSenderName() + "\"," +
-                    "\"icon_emoji\" : \""+ this.getSenderIcon() +"\"" +
-                "}";
+                    "\"icon_emoji\" : \"" + this.getSenderIcon() + "\"";
+        String channel = this.getChannelName();
+        if (channel != null && !channel.isEmpty()) {
+            payload += ",\"channel\" : \"" + channel + "\"";
+        }
+        payload += "}";
+
+        return payload;
     }
 
     public String getId() {
@@ -43,7 +53,7 @@ public class SlackChannel {
     }
 
     public static String getTokenDescription() {
-        return "Enter your slack webhook integration path (i.e. <xxx>/<yyy>/<zzz>.";
+        return "Enter your slack webhook integration URL (https://hooks.slack.com/services/xxx/yyy/zzz)";
     }
 
     public String getSenderName() {
@@ -75,6 +85,17 @@ public class SlackChannel {
     }
 
     public String getUrl() {
+        if (this.token.contains("https://hooks.slack.com/services")) {
+            return this.token;
+        }
         return "https://hooks.slack.com/services/" + this.token;
+    }
+
+    public static String getChanneNameDescription() {
+        return "Channel Override: (leave blank for default channel)";
+    }
+
+    public String getChannelName()  {
+        return channelName == null ? "" : channelName;
     }
 }

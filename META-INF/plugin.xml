@@ -28,6 +28,9 @@
         - Better response checking<br />
     1.7 - Ability to edit a channel<br />
         - Better Escaping<br />
+    1.8 - Ability to edit target channel<br />
+        - Better webhook URL handling<br />
+        - Show full path to project file<br />
         <br />
     ]]>
   </change-notes>

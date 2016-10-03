@@ -27,6 +27,7 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
     public Map<String, String> settings = new HashMap<String, String>();
     public Map<String, String> aliases  = new HashMap<String, String>();
     public Map<String, String> icons  = new HashMap<String, String>();
+    public Map<String, String> channels  = new HashMap<String, String>();
 
     protected List<SlackChannel> channelsRegistry = new ArrayList<SlackChannel>();
 
@@ -40,9 +41,10 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
         settings = slackStorage.settings;
         aliases = slackStorage.aliases;
         icons = slackStorage.icons;
+        channels = slackStorage.channels;
 
         for (String key: settings.keySet()) {
-            channelsRegistry.add(new SlackChannel(settings.get(key), key, aliases.get(key), icons.get(key)));
+            channelsRegistry.add(new SlackChannel(settings.get(key), key, aliases.get(key), icons.get(key), channels.get(key)));
         }
     }
 
@@ -50,6 +52,7 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
         this.settings.put(channel.getId(), channel.getToken());
         this.aliases.put(channel.getId(), channel.getSenderName());
         this.icons.put(channel.getId(), channel.getSenderIcon());
+        this.channels.put(channel.getId(), channel.getChannelName());
         this.channelsRegistry.add(channel);
     }
 
@@ -57,6 +60,7 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
         this.settings.remove(description);
         this.aliases.remove(description);
         this.icons.remove(description);
+        this.channels.remove(description);
         this.channelsRegistry.remove(this.getSlackChannelByDescription(description));
     }
 
@@ -64,6 +68,7 @@ public class SlackStorage implements PersistentStateComponent<SlackStorage> {
         this.settings.clear();
         this.aliases.clear();
         this.icons.clear();
+        this.channels.clear();
         this.channelsRegistry.clear();
     }
 
