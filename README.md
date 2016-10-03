@@ -4,6 +4,14 @@ PHP Storm (IntelliJ) plugin that allows posting code snippets to a Slack channel
 Simple: Hightlight some text, hit 'Send to Slack', rejoice
 
 # Install the plugin
+
+### Method 1:
+- File->Settings in your IDE
+- Open 'Plugins' and hit 'Browse Repositories'
+- Search for 'Slack Storm'
+- Follow directions
+
+### Method 2:
 - Get the .jar 
 - Install the SlackStorm plugin via "Install plugin from disk..." in preferences
 - Restart
